@@ -1,54 +1,63 @@
-class BMI:
-    bmi_category ={ 'UW' :'Underweight',
-                    'NW': 'Normal Weight',
-                    'OW': 'Over Weight',
-                    'MO': 'Moderately obese',
-                    'SO': 'Severly obese',
-                    'VSO': 'Very Severly obese',
-                   }
+import json
+import json
+import pandas as pd
+import math
 
-    health_risk = {
-                    'MR':'Malnutrition Risk',
-                    'LR': 'Low Risk',
-                    'ER': 'Enhanced Risk',
-                    'MRS': 'Medium Risk',
-                    'HR': 'High Risk',
-                    'VHR': 'Very High Risk',
+BMI_CHART = {
+    "Underweight"            : {'lower' : 0.0, 'upper' : 18.49,    "risk" : 'Malnutrition Risk'},
+    "Normal Weight"          : {'lower' : 18.50,     'upper' : 24.99,    "risk" : 'Low Risk'},
+    "Overweight"             : {'lower' : 25,        'upper' : 29.99,    "risk" : 'Enhanced Risk'},
+    "Moderately Obese"       : {'lower' : 30,        'upper' : 34.99,    'risk' : 'Medium Risk'},
+    "Severely Obese"         : {'lower' : 35,        'upper' : 39.99,    'risk' : 'High Risk'},
+    "Very Severly Obese"     : {'lower' : 40,        'upper' : 100.00, 'risk' : 'Very High Risk'}
     }
 
+def calculate_bmi(height,weight):
+    bmi = round(weight / (height**2), 2)
+    return bmi
 
-def bmi_calculator():
-    BMI_category= ''
-    Health_risk= ''
-    BMI_range = ''
-    Mass=float(input("Enter the mass in Kgs"))
-    Height=float(input("Enter the height in cms"))
-    bmi=Mass/((Height/100)**2)
-    if bmi <= 18.4 :
-        BMI_category = BMI.bmi_category.get('UW')
-        BMI_range = bmi
-        Health_risk = BMI.health_risk.get('MR')
-    elif bmi >=18.5 and bmi <= 24.9:
-        BMI_category = BMI.bmi_category.get('NW')
-        BMI_range = bmi
-        Health_risk = BMI.health_risk.get('LR')
-    elif bmi >=25 and bmi <= 29.9:
-        BMI_category = BMI.bmi_category.get("OW")
-        BMI_range = bmi
-        Health_risk = BMI.health_risk.get('ER')
-    elif bmi >=30 and bmi <= 34.9:
-        BMI_category = BMI.bmi_category.get("MO")
-        BMI_range = bmi
-        Health_risk = BMI.health_risk.get('MRS')
-    elif bmi >= 35 and bmi <= 39.9:
-        BMI_category = BMI.bmi_category.get("SO")
-        BMI_range = bmi
-        Health_risk = BMI.health_risk.get('HR')
-    elif bmi > 40:
-        BMI_category = BMI.bmi_category.get("VSO")
-        BMI_range = bmi
-        Health_risk = BMI.health_risk.get('VHR')
-    bmi_list =[BMI_category,BMI_range,Health_risk]
-    return bmi_list
 
-bmi_calculator()
+def category_and_risk(bmi_value):
+    for category, range_risk in BMI_CHART.items():
+        
+        lower_limit = range_risk['lower']
+        upper_limit = range_risk['upper']
+        risk = range_risk['risk']
+        
+        if lower_limit <= bmi_value <= upper_limit:
+            
+            return category, risk
+
+
+def generate_data(row):
+    height_cm = row['HeightCm']
+    weight_kg = row["WeightKg"]
+    
+    bmi = calculate_bmi(height_cm, weight_kg )
+    
+    category, risk = category_and_risk(bmi)
+    
+    row['BMI value'] = bmi
+    row['BMI Category'] = category
+    row['Health risk'] = risk
+    
+    return row
+
+
+def main(json_file, result_file_type = 'csv'):
+    with open(json_file, 'r') as fp:
+        data = json.load(fp)
+   
+    df = pd.DataFrame(data)
+    df = df.apply(generate_data, axis = 1)
+    
+    file_name = "result.csv"
+    df.to_csv(file_name, index=False)
+    print(f"data saved : {file_name}")
+    
+
+    
+if __name__ == '__main__':
+    json_file = r"C:\Users\ZIA\Videos\BMI_DATA.json"
+    result_file_type = 'csv'
+    main(json_file, result_file_type = result_file_type ) 
